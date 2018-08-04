@@ -47,6 +47,8 @@ public abstract class GetterSetterPropertyDescriptor extends AbstractPropertyDes
     private Class<?> propertyType;
     protected final BeanContainer beanContainer;
     protected final DestBeanCreator destBeanCreator;
+    protected DeepHierarchyElement[] deepSrcHierarchy;
+    protected DeepHierarchyElement[] deepDestHierarchy;
 
     public GetterSetterPropertyDescriptor(Class<?> clazz, String fieldName, boolean isIndexed, int index,
                                           HintContainer srcDeepIndexHintContainer, HintContainer destDeepIndexHintContainer,
@@ -120,7 +122,7 @@ public abstract class GetterSetterPropertyDescriptor extends AbstractPropertyDes
         // follow deep field hierarchy. If any values are null along the way, then return null
         Object parentObj = srcObj;
         Object hierarchyValue = parentObj;
-        DeepHierarchyElement[] hierarchy = getDeepFieldHierarchy(srcObj, srcDeepIndexHintContainer);
+        DeepHierarchyElement[] hierarchy = getDeepSrcFieldHierarchy();
         int size = hierarchy.length;
         for (int i = 0; i < size; i++) {
             DeepHierarchyElement hierarchyElement = hierarchy[i];
@@ -148,7 +150,7 @@ public abstract class GetterSetterPropertyDescriptor extends AbstractPropertyDes
 
     protected void writeDeepDestinationValue(Object destObj, Object destFieldValue, FieldMap fieldMap) {
         // follow deep field hierarchy. If any values are null along the way, then create a new instance
-        DeepHierarchyElement[] hierarchy = getDeepFieldHierarchy(destObj, fieldMap.getDestDeepIndexHintContainer());
+        DeepHierarchyElement[] hierarchy = getDeepDestFieldHierarchy();
         // first, iteratate through hierarchy and instantiate any objects that are null
         Object parentObj = destObj;
         int hierarchyLength = hierarchy.length - 1;
@@ -291,8 +293,19 @@ public abstract class GetterSetterPropertyDescriptor extends AbstractPropertyDes
         }
     }
 
-    private DeepHierarchyElement[] getDeepFieldHierarchy(Object obj, HintContainer deepIndexHintContainer) {
-        return ReflectionUtils.getDeepFieldHierarchy(obj.getClass(), fieldName, deepIndexHintContainer);
+    private DeepHierarchyElement[] getDeepSrcFieldHierarchy() {
+        if (deepSrcHierarchy == null) {
+            deepSrcHierarchy = ReflectionUtils.getDeepFieldHierarchy(clazz, fieldName, srcDeepIndexHintContainer);
+        }
+        return deepSrcHierarchy;
+    }
+
+
+    private DeepHierarchyElement[] getDeepDestFieldHierarchy() {
+        if (deepDestHierarchy == null) {
+            deepDestHierarchy = ReflectionUtils.getDeepFieldHierarchy(clazz, fieldName, destDeepIndexHintContainer);
+        }
+        return deepDestHierarchy;
     }
 
     private void writeIndexedValue(Object destObj, Object destFieldValue) {
